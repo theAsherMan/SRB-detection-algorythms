@@ -1,180 +1,177 @@
 #include <iostream>
 #include <time.h>
+#include <vector>
+#include <sstream>
+#include <string>
+#include <math.h>
 
 #include "../build/LinearHoughTransform.hpp"
-#include "../build/TwoDimentionalSpace.hpp"
 
+using namespace std;
 struct LineDescriptor{
     double m;
     double c;
 };
 
-LineDescriptor* addThreeStraightLines(TwoDimentionalSpace*);
-void addNoise(TwoDimentionalSpace*);
+void addNoise(vector<vector<long>*>*);
+void addLines(vector<vector<long>*>*, vector<LineDescriptor>);
+void printSpace(vector<vector<long>*>*);
 
-int width = 30;
-int height = 30;
-
-int main(int argc, char** argv, char** envp)
+int main(int charc, char** argv)
 {
-
-    long** a = new long*[10];
-    for(int ii=0; ii<10; ii++)
-    {
-        a[ii] = new long[10];
-        for(int jj=0; jj<10; jj++)
-        {
-            a[ii][jj] = 100 * ii + jj;
-        }
-    }
-
-    for(int ii = 0; ii<10; ii++)
-    {
-        for(int jj=0; jj<10; jj++)
-        {
-            std::cout << a[ii][jj] << "::";
-        }
-        std::cout << std::endl;
-    }
+    int width = 30;
+    int height = 30;
 
     srand(time(NULL));
 
-    TwoDimentionalSpace* imageSpace = new TwoDimentionalSpace(width, height);
+//  ------------------------------------------------------------------------
 
-    LineDescriptor* lines = addThreeStraightLines(imageSpace);
+    vector<LineDescriptor> lines = vector<LineDescriptor>();
+    for(int ii=0; ii<3; ii++)
+    {
+        LineDescriptor line = LineDescriptor();
+        line.m = rand()%10;
+        line.c = rand()%10;
+        lines.push_back(line);
+    }
 
-    addNoise(imageSpace);
+//  ------------------------------------------------------------------------
 
-    auto start = time(NULL);
-    std::cout << "started transform" << std::endl;
+    vector<vector<long>*>* imageSpace = new vector<vector<long>*>();
+    for(int x=0; x<width; x++)
+    {
+        imageSpace->push_back(new vector<long>());
+        for(int y=0; y<height; y++)
+        {
+            imageSpace->back()->push_back(0L);
+        }
+    }
 
-    TwoDimentionalSpace* houghSpace = ImageSpaceToHoughSpace(width, height, imageSpace);
+//  ------------------------------------------------------------------------
 
-    auto end = time(NULL);
-    std::cout << "transform finnished" << std::endl;
+    string input = "none";
 
-    std::cout << "transformation took:: " << end-start << " seconds" << std::endl;
+    string addLinesOption = "addLines";
+    string addNoiseOption = "addNoise";
+    string preformTransformOption = "preformTransform";
 
-    std::cout << "transformation converted space:: " << std::endl;
+    while(input != "exit")
+    {
+        cout << "imageSpace" << endl;
+        printSpace(imageSpace);
+        cout << "please select option" << endl;
+        cout << addNoiseOption << endl;
+        cout << addLinesOption << endl;
+        cout << preformTransformOption << endl;
 
-    imageSpace->print();
+        cin >> input;
 
-    std::cout << "into::" << std::endl;
-
-    houghSpace->print();
+        if(input == addNoiseOption){addNoise(imageSpace);}
+        if(input == addLinesOption){addLines(imageSpace, lines);}
+        if(input == preformTransformOption)
+        {
+            vector<vector<long>*>* houghSpace = imageSpaceToHoughSpace(imageSpace);
+            cout << "houghSpace" << endl;
+            printSpace(houghSpace);
+            cout << "space contains tranforms for lines" << endl;
+            for(LineDescriptor line : lines)
+            {
+                cout << "m:" << line.m << " c:" << line.c << endl;
+            }
+        }
+    }
 
     return 0;
 }
 
-LineDescriptor* addThreeStraightLines(TwoDimentionalSpace* space)
+void addNoise(vector<vector<long>*>* imageSpace)
 {
-    LineDescriptor* lines = new LineDescriptor[3];
-    for(int ii=0; ii<3; ii++)
+    for(vector<long>* row : *imageSpace)
     {
-        lines[ii].m = (rand()%10) + 1;
-        lines[ii].c = (rand()%10) + 1;
-    }
-
-    long*** paintedLines = new long**[3];
-    paintedLines[0] = new long*[width];
-    for(int ii=0; ii<width; ii++)
-    {
-        paintedLines[0][ii] = new long[height];
-        for(int jj=0; jj<height; jj++)
+        for(int y=0; y<row->size(); y++)
         {
-            paintedLines[0][ii][jj] = 0;
+            row->at(y) += rand()%5;
         }
     }
-
-    paintedLines[1] = new long*[width];
-    for(int ii=0; ii<width; ii++)
-    {
-        paintedLines[1][ii] = new long[height];
-        for(int jj=0; jj<height; jj++)
-        {
-            paintedLines[1][ii][jj] = 0;
-        }
-    }
-
-    paintedLines[2] = new long*[width];
-    for(int ii=0; ii<width; ii++)
-    {
-        paintedLines[2][ii] = new long[height];
-        for(int jj=0; jj<height; jj++)
-        {
-            paintedLines[2][ii][jj] = 0;
-        }
-    }
-
-    for(TwoDimentionalSpaceLocation point : *space)
-    {
-        for(int ii=0; ii<3; ii++)
-        {
-            if(point.y == lines[ii].m * point.x + lines[ii].c)
-            {
-                paintedLines[ii][point.x][point.y] = 5;
-            }
-        }
-    }
-
-    for(int ii=0; ii<3; ii++)
-    {
-        for(int x=0; x<width-1; x++)
-        {
-            bool painting = false;
-            for(int y=0; y<height; y++)
-            {
-                if(paintedLines[ii][x+1][y])
-                {
-                    break;
-                }
-                if(paintedLines[ii][x][y])
-                {
-                    painting = true;
-                }
-                if(painting)
-                {
-                    paintedLines[ii][x][y] = 5;
-                }
-            }
-        }
-    }
-
-    for(int x=0; x<3; x++)
-    {
-        for(int ii=0; ii<width; ii++)
-        {
-            for(int jj=0; jj<height; jj++)
-            {
-                if(paintedLines[x][ii][jj] == 0)
-                {
-                    std::cout << "_" << "::";
-                }
-                else{
-                    std::cout << paintedLines[x][ii][jj] << "::";
-                }
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl << std::endl << std::endl;
-    }
-
-    for(auto point : *space)
-    {
-        for(int ii=0; ii<3; ii++)
-        {
-            space->set(point.x, point.y, space->get(point.x, point.y) + paintedLines[ii][point.x][point.y]);
-        }
-    }
-
-    space->print();
-    return lines;
 }
 
-void addNoise(TwoDimentionalSpace* space)
+void addLines(vector<vector<long>*>* imageSpace, vector<LineDescriptor> lines)
 {
-    for(TwoDimentionalSpaceLocation point : *space)
+    
+    for(LineDescriptor line : lines)
     {
-        space->set(point.x, point.y, space->get(point.x, point.y) + rand()%5);
+        vector<vector<long>*>* lineSpace = new vector<vector<long>*>();
+        for(int ii=0; ii<imageSpace->size(); ii++)
+        {
+            lineSpace->push_back(new vector<long>());
+            for(int jj=0; jj<imageSpace->at(0)->size(); jj++)
+            {
+                lineSpace->at(ii)->push_back(0L);
+            }
+        }
+        for(double x = 0.0; x < lineSpace->at(0)->size(); x = nextafter(x, lineSpace->at(0)->size() + 1))
+        {
+            int y = (int)(line.m*x+line.c);
+            if(y >= 0 && y < lineSpace->size())
+            {
+                if(lineSpace->at(y)->at(x) == 0)
+                {
+                    lineSpace->at(y)->at(x) += 5;
+                }
+            }
+        }
+        for(int y=0; y<imageSpace->size(); y++)
+        {
+            for(int x=0; x<imageSpace->at(y)->size(); x++)
+            {
+                imageSpace->at(y)->at(x) += lineSpace->at(y)->at(x);
+            }
+            delete(imageSpace->at(y));
+        }
+        delete(imageSpace);
     }
+}
+
+void printSpace(vector<vector<long>*>* imageSpace)
+{
+    int cellwidth = 0;
+    for(int y=0; y<imageSpace->size(); y++)
+    {
+        for(int x=0; x<imageSpace->at(y)->size(); x++)
+        {
+            stringstream stream = stringstream();
+            stream << imageSpace->at(y)->at(x);
+            string str_bucket = stream.str();
+            cellwidth = max(cellwidth, (int)str_bucket.length());
+        }
+    }
+    for(int y=imageSpace->size()-1; y>=0; y--)
+    {
+        cout << endl;
+        for(int x=0; x < imageSpace->at(y)->size(); x++)
+        {
+            stringstream stream = stringstream();
+            stream << imageSpace->at(y)->at(x);
+            string str_bucket = stream.str();
+            int stringLength = str_bucket.length();
+            int length_diff = cellwidth - stringLength;
+
+            cout << ":";
+            for(int ii=0; length_diff/2; ii++)
+            {
+                cout << " ";
+            }
+            cout << str_bucket;
+            for(int ii=0; length_diff/2; ii++)
+            {
+                cout << " ";
+            }
+            if(length_diff%2)
+            {
+                cout << " ";
+            }
+            cout << ":";
+        }
+    }
+    cout << endl;
 }

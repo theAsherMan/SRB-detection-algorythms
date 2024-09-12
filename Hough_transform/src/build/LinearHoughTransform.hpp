@@ -1,5 +1,7 @@
 #pragma once
 
-#include "TwoDimentionalSpace.hpp"
+#include <vector>
 
-TwoDimentionalSpace* ImageSpaceToHoughSpace(int, int, TwoDimentionalSpace*);
+using namespace std;
+
+vector<vector<long>*>* imageSpaceToHoughSpace(vector<vector<long>*>* imageSpace);

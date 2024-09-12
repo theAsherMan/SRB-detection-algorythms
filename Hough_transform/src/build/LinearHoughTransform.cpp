@@ -1,27 +1,54 @@
 #include "LinearHoughTransform.hpp"
-
-void plotInHoughSpace(int x, int y, long value, TwoDimentionalSpace*, TwoDimentionalSpace*);
+#include <vector>
 
 using namespace std;
 
-TwoDimentionalSpace* ImageSpaceToHoughSpace(int outputWidth, int outputHight, TwoDimentionalSpace* imageSpace)
-{
-    TwoDimentionalSpace* houghSpace = new TwoDimentionalSpace(outputWidth, outputHight);
+void plotInHoughSpace(int, int, long, vector<vector<long>*>*);
+vector<vector<long>*>* allocateHoughSpace(int, int);
 
-    for(TwoDimentionalSpaceLocation point : *imageSpace)
+vector<vector<long>*>* imageSpaceToHoughSpace(vector<vector<long>*>* imageSpace)
+{
+    int height = imageSpace->size();
+    int width = imageSpace->at(0)->size();
+    vector<vector<long>*>* houghSpace = allocateHoughSpace(width, height);
+
+    for(int y=0; y<height; y++)
     {
-        plotInHoughSpace(point.x, point.y, point.value, imageSpace, houghSpace);
+        for(int x=0; x<width; x++)
+        {
+            plotInHoughSpace(x,y,imageSpace->at(y)->at(x), houghSpace);
+        }
     }
+
+    return houghSpace;
 }
 
-void plotInHoughSpace(int x, int y, long value, TwoDimentionalSpace* imageSpace, TwoDimentionalSpace* houghSpace)
+void plotInHoughSpace(int x, int y, long value, vector<vector<long>*>* houghSpace)
 {
     if(value != 0)
     {
-        for(int m=0; m<houghSpace->getWidth(); m++)
+        for(int m=0; m<houghSpace->size(); m++)
         {
             int c = -m*x + y;
-            houghSpace->set(m,c, houghSpace->get(m,c)+1);
+            if(c < houghSpace->at(0)->size() && c >= 0)
+            {
+                houghSpace->at(c)->at(m) += value;
+            }
         }
     }
+}
+
+vector<vector<long>*>* allocateHoughSpace(int width, int height)
+{
+    vector<vector<long>*>* houghSpace = new vector<vector<long>*>();
+    for(int ii=0; ii<height; ii++)
+    {
+        houghSpace->push_back(new vector<long>());
+        for(int jj=0; jj<width; jj++)
+        {
+            houghSpace->back()->push_back(0L);
+        }
+    }
+
+    return houghSpace;
 }
