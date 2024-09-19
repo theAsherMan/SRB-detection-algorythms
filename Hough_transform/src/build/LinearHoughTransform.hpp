@@ -1,7 +1,11 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+
 #include <vector>
+#include "VisualSpace.hpp"
+#include <math.h>
 
 using namespace std;
 
-vector<vector<long>*>* imageSpaceToHoughSpace(vector<vector<long>*>* imageSpace);
+VisualSpace* imageSpaceToHoughSpace(VisualSpace* imageSpace);

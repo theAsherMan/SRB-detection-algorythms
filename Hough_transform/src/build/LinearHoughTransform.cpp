@@ -1,54 +1,38 @@
 #include "LinearHoughTransform.hpp"
-#include <vector>
 
 using namespace std;
 
-void plotInHoughSpace(int, int, long, vector<vector<long>*>*);
-vector<vector<long>*>* allocateHoughSpace(int, int);
+void plotInHoughSpace(int, int, VSPoint*, VisualSpace*);
 
-vector<vector<long>*>* imageSpaceToHoughSpace(vector<vector<long>*>* imageSpace)
+VisualSpace* imageSpaceToHoughSpace(VisualSpace* imageSpace)
 {
-    int height = imageSpace->size();
-    int width = imageSpace->at(0)->size();
-    vector<vector<long>*>* houghSpace = allocateHoughSpace(width, height);
+    int max_radius_of_image = sqrt(pow(imageSpace->getHieght(),2) + pow(imageSpace->getWidth(),2));
+    int precision = (imageSpace->getWidth() + imageSpace->getHieght())/2;
+    
+    VisualSpace* houghSpace = new VisualSpace(M_PI*precision, max_radius_of_image);
 
-    for(int y=0; y<height; y++)
+    for(int y=0; y<imageSpace->getHieght(); y++)
     {
-        for(int x=0; x<width; x++)
+        for(int x=0; x<imageSpace->getWidth(); x++)
         {
-            plotInHoughSpace(x,y,imageSpace->at(y)->at(x), houghSpace);
+            plotInHoughSpace(x,y,imageSpace->point(x,y), houghSpace);
         }
     }
 
     return houghSpace;
 }
 
-void plotInHoughSpace(int x, int y, long value, vector<vector<long>*>* houghSpace)
+void plotInHoughSpace(int x, int y, VSPoint* point, VisualSpace* houghSpace)
 {
-    if(value != 0)
+    if(point->getValue() > 0)
     {
-        for(int m=0; m<houghSpace->size(); m++)
+        for(int m=0; m<houghSpace->getWidth(); m++)
         {
             int c = -m*x + y;
-            if(c < houghSpace->at(0)->size() && c >= 0)
+            if(c < houghSpace->getHieght() && c >= 0)
             {
-                houghSpace->at(c)->at(m) += value;
+                houghSpace->point(m,c)->increaseValue(point->getValue());
             }
         }
     }
-}
-
-vector<vector<long>*>* allocateHoughSpace(int width, int height)
-{
-    vector<vector<long>*>* houghSpace = new vector<vector<long>*>();
-    for(int ii=0; ii<height; ii++)
-    {
-        houghSpace->push_back(new vector<long>());
-        for(int jj=0; jj<width; jj++)
-        {
-            houghSpace->back()->push_back(0L);
-        }
-    }
-
-    return houghSpace;
 }
