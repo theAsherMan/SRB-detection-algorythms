@@ -1,5 +1,8 @@
 #include "VisualSpace.hpp"
 #include <iostream>
+#include <cmath>
+
+using namespace std;
 
 VisualSpace::VisualSpace(int width, int height)
 {
@@ -40,6 +43,14 @@ int VisualSpace::getHieght()
     return this->hieght;
 }
 
+double VisualSpace::getImageDiamiter()
+{
+    double heightFromOrigin = double(hieght)/2;
+    double widthFromOrigin = double(width)/2;
+
+    return sqrt(pow(heightFromOrigin,2.0) + pow(widthFromOrigin,2.0));
+}
+
 VSPoint* VisualSpace::point(int x, int y)
 {
     return this->array->at(x)->at(y);
@@ -47,7 +58,7 @@ VSPoint* VisualSpace::point(int x, int y)
 
 string VisualSpace::toString()
 {
-    string result = "";
+    string result = ">";
     for(int y=this->getHieght()-1; y>= 0; y--)
     {
         for(int x=0; x<this->getWidth(); x++)
@@ -56,9 +67,9 @@ string VisualSpace::toString()
             result += to_string(this->point(x,y)->getValue());
         }
         result += " :";
-        result += "\n";
+        result += "<\n>";
     }
-    return result;
+    return result + "<";
 }
 
 // -------------------------------------------------------------------

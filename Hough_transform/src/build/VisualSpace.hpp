@@ -29,5 +29,6 @@ class VisualSpace{
         VSPoint* point(int, int);
         int getWidth();
         int getHieght();
+        double getImageDiamiter();
         string toString();
 };

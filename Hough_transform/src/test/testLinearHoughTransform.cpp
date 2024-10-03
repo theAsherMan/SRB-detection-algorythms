@@ -6,36 +6,35 @@
 #include <string>
 #include <math.h>
 
-#include "../build/LinearHoughTransform.hpp"
+#include "../build/LinearHoughTransformer.hpp"
 #include "../build/VisualSpace.hpp"
 
 using namespace std;
-struct LineDescriptor{
-    double m;
-    double c;
-
-    string toString()
-    {
-        return "y = "+to_string(m)+"x + "+to_string(c);
-    }
-};
 
 void addNoise(VisualSpace*);
-LineDescriptor createRandomLine();
-void addLine(VisualSpace* imageSpace, vector<LineDescriptor>*, LineDescriptor);
+HoughLineDescriptor createRandomLine();
+void addLine(VisualSpace* imageSpace, vector<HoughLineDescriptor>*, HoughLineDescriptor);
 void outPrint(string);
 void display(string);
 
+VisualSpace* imageSpace;
+
+#define MAX_THETA (0.5*M_PI)
+#define MIN_THETA (0.5)
+
+#define MAX_RHO (0)
+#define MIN_RHO (0)
+
 int main(int charc, char** argv)
 {
-    int width = 5000;
-    int height = 5000;
+    int width = 100;
+    int height = 100;
 
     srand(time(NULL));
 
 //  ------------------------------------------------------------------------
 
-    VisualSpace* imageSpace = new VisualSpace(width, height);
+    imageSpace = new VisualSpace(width, height);
 
 //  ------------------------------------------------------------------------
 
@@ -45,17 +44,17 @@ int main(int charc, char** argv)
     string addLineManual = "addMyLine";
     string addNoiseOption = "addNoise";
     string preformTransformOption = "preformTransform";
-    string showAreaAroundLinesOption = "toggleShowArea";
 
-    vector<LineDescriptor> lines = vector<LineDescriptor>();
+    auto lines = vector<HoughLineDescriptor>();
 
     remove("..\\log.txt");
 
-    bool showareaaroundlines = false;
     while(input != "exit")
     {
+        outPrint("imageSpace");
+        outPrint(imageSpace->toString());
         outPrint("space contains lines:");
-        for(LineDescriptor line : lines)
+        for(auto line : lines)
         {
             outPrint(line.toString());
         }
@@ -64,7 +63,6 @@ int main(int charc, char** argv)
         outPrint(addLineautoOption);
         outPrint(addLineManual);
         outPrint(preformTransformOption);
-        outPrint(showAreaAroundLinesOption);
         outPrint("");
 
         cin >> input;
@@ -75,132 +73,54 @@ int main(int charc, char** argv)
             outPrint("space contains lines");
             for(int ii=0; ii<lines.size(); ii++)
             {
-                outPrint("y = " + to_string(lines.at(ii).m) + "x" + "+" + to_string(lines.at(ii).c));
+                outPrint(lines.at(ii).toString());
             }
         }
         if(input == addLineManual)
         {
-            LineDescriptor line = LineDescriptor();
+            double theta;
+            double rho;
             outPrint("");
-            outPrint("input gradient value");
-            cin >> line.m;
+            outPrint("input theta value");
+            cin >> theta;
+            if(theta > MAX_THETA || theta < MIN_THETA){
+                outPrint("invalid theta");
+                continue;
+            }
             outPrint("");
-            outPrint("input y-intercept");
-            cin >> line.c;
-            addLine(imageSpace, &lines, line);
-        }
-        if(input == showAreaAroundLinesOption){
-            showareaaroundlines = !showareaaroundlines;
-            outPrint("show area around lines set to "+to_string(showareaaroundlines));
+            outPrint("input rho");
+            cin >> rho;
+            if(rho > MAX_RHO || rho < MIN_RHO)
+            {
+                outPrint("invalid rho");
+                continue;
+            }
+            addLine(imageSpace, &lines, HoughLineDescriptor(theta, rho, 10));
         }
         if(input == preformTransformOption)
         {
-            outPrint("starting transform");
-            VisualSpace* houghSpace = imageSpaceToHoughSpace(imageSpace);
-            outPrint("transform complete");
-            vector<VSPoint> markedPoints = vector<VSPoint>();
-            VSPoint highestPoint = VSPoint(0,0,0);
+            auto transformer = LinearHoughTransformer(0, 0.5*M_PI, 100, 5, imageSpace);
             
-            for(int ii=0; ii<lines.size(); ii++)
-            {
-                highestPoint = VSPoint(0,0,0);
-                for(int x = 0; x<houghSpace->getWidth(); x++)
-                {
-                    for(int y=0; y<houghSpace->getHieght(); y++)
-                    {
-                        if(houghSpace->point(x,y)->getValue() > highestPoint.getValue())
-                        {
-                            bool checked = false;
-                            for(VSPoint point : markedPoints)
-                            {
-                                if(x == point.getX() && y == point.getY())
-                                {
-                                    checked = true;
-                                }
-                            }
-                            if(!checked)
-                            {
-                                highestPoint = VSPoint(x,y,houghSpace->point(x,y)->getValue());
-                            }
-                        }
-                    }
-                }
-                VSPoint pointFound = VSPoint(highestPoint.getX(), highestPoint.getY(), highestPoint.getValue());
-                markedPoints.push_back(pointFound);
-            }
-
+            outPrint("starting transform");
+            auto detectedLines = transformer.getLinesOfHighestBrightness(1);
+            outPrint("transform complete");
+            outPrint("resulting hough space");
+            outPrint(transformer.showHoughSpace());
             outPrint("detected lines");
-            for(VSPoint line : markedPoints)
+            for(auto line : detectedLines)
             {
-                outPrint("y = "+to_string(line.getX())+"x + "+to_string(line.getY()));
+                outPrint(line.toString());
             }
             outPrint("correct lines");
-            for(LineDescriptor line : lines)
+            for(auto line : lines)
             {
-                outPrint("y = " + to_string(line.m) + "x" + "+" + to_string(line.c));
+                outPrint(line.toString());
             }
-
-            if(showareaaroundlines)
+            outPrint("votes on correct lines");
+            for(auto line : lines)
             {
-                outPrint("displaying lines");
-                for(VSPoint line : markedPoints)
-                {
-                    outPrint("y = "+to_string(line.getX())+"x + "+to_string(line.getY()));
-                    
-                    outPrint("in hough space");
-                    int x_low = line.getX() - 10;
-                    int y_low = line.getY() - 10;
-                    int x_high = line.getX() + 10;
-                    int y_high = line.getY() + 10;
-
-                    for(int jj = y_high; jj>=y_low; jj--)
-                    {
-                        for(int ii=x_low; ii<=x_high; ii++)
-                        {
-                            display(": ");
-                            if(ii == line.getX() && jj == line.getY())
-                            {
-                                display(">");
-                            }
-                            if(ii < 0 || ii >= houghSpace->getWidth() || jj < 0 || jj >= houghSpace->getHieght())
-                            {
-                                display(" ");
-                            }else{
-                                display(to_string(houghSpace->point(ii,jj)->getValue()));
-                            }
-                            if(ii == line.getX() && jj == line.getY())
-                            {
-                                display("<");
-                            }
-                            display(" :");
-                        }
-                        outPrint("");
-                    }
-
-                    outPrint("in normal space");
-                    x_low = 0;
-                    x_high = 20;
-                    y_low = line.getY() - 10;
-                    y_high = line.getY() + 10;
-
-                    for(int jj = y_high; jj>=y_low; jj--)
-                    {
-                        for(int ii=x_low; ii<=x_high; ii++)
-                        {
-                            display(": ");
-                            if(ii < 0 || ii >= imageSpace->getWidth() || jj < 0 || jj >= houghSpace->getHieght())
-                            {
-                                display(" ");
-                            }else{
-                                display(to_string(imageSpace->point(ii,jj)->getValue()));
-                            }
-                            display(" :");
-                        }
-                        outPrint("");
-                    }
-                }
+                outPrint(transformer.getLine(line.theta, round(line.rho)).toString());
             }
-            delete houghSpace;
         }
     }
 
@@ -221,85 +141,55 @@ void addNoise(VisualSpace* imageSpace)
     cout << "added noise" << endl;
 }
 
-LineDescriptor createRandomLine()
+HoughLineDescriptor createRandomLine()
 {
-    LineDescriptor line = LineDescriptor();
-    line.m = rand()%10;
-    line.c = rand()%100;
+    double theta_seed = (rand() % 100) / 100.0;
+    double theta = (MAX_THETA - MIN_THETA) * theta_seed + MIN_THETA;
+    double rho_seed = (rand() % 100) / 100.0;
+    double rho = rho_seed * (MAX_RHO - MIN_RHO) + MIN_RHO;
+
+    auto line = HoughLineDescriptor(theta, rho, 60);
+    outPrint("new line: " + line.toString());
     return line;
 }
 
-void addLine(VisualSpace* imageSpace, vector<LineDescriptor>* lines, LineDescriptor line)
+void addLine(VisualSpace* imageSpace, vector<HoughLineDescriptor>* lines, HoughLineDescriptor line)
 {
     lines->push_back(line);
-    
-    int y = line.c;
-    int y_high = y + 1;
-    int y_low = y - 1;
 
-    int x=0;
-    while(x < imageSpace->getWidth())
+    int x = max(0.0, line.rho/cos(line.theta));
+    int y = max(0.0, line.rho/sin(line.theta));
+
+    double cosTheta = cos(line.theta);
+    double sinTheta = sin(line.theta);
+
+    bool paint = true;
+
+    while(x < imageSpace->getWidth() && x >= 0 && y < imageSpace->getHieght() && y >= 0)
     {
-        double y_true = line.m * x + line.c;
-
-        double dy_high = abs(y_high - y_true);
-        double dy = abs(y - y_true);
-        double dy_low = abs(y_low - y_true);
-
-        if(y>imageSpace->getHieght()-1)
-        {
-            if(line.m >= 0)
-            {
-                break;
-            }
-        }else{
-            if(y<0)
-            {
-                if(line.m <= 0)
-                {
-                    break;
-                }
-            }else{
-                imageSpace->point(x,y)->increaseValue(50);
-
-            }
+        if(paint){
+            imageSpace->point(x, y)->increaseValue(line.brightness);
         }
+        paint =true;
 
-        if(dy_high < dy)
+        int y_true = (line.rho - x*cosTheta)/sinTheta;
+        if(y_true < y)
         {
-            y_high++;
-            y++;
-            y_low++;
+            y--;
+        }else if(y_true > y){
+            y++;                
         }else{
-            if(dy_low < dy)
+            x++;
+            y_true = (line.rho - x*cosTheta)/sinTheta;
+            if(y_true < y)
             {
-                y_high--;
                 y--;
-                y_low--;
-            }else{
-                x++;
-                y_true = line.m * x + line.c;
-                dy_high = abs(y_high - y_true);
-                dy = abs(y - y_true);
-                dy_low = abs(y_low - y_true);
-                if(dy_high < dy)
-                {
-                    y_high++;
-                    y++;
-                    y_low++;
-                }else{
-                    if(dy_low < dy)
-                    {
-                        y_high--;
-                        y--;
-                        y_low--;
-                    }
-                }
+            }else if(y_true > y)
+            {
+                y++;
             }
         }
     }
-
-    cout << "added line" << endl;
 }
 
 void outPrint(string message)
