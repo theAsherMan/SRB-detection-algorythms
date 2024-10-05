@@ -3,3 +3,5 @@ theta= 0.408407 : rho= 26
 
 good lines:
 theta= 1.367345 : rho= 0
+
+https://github.com/SetroZ/CIRA-Algos
