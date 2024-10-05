@@ -58,11 +58,32 @@ private:
     double _theta;
     int _index;
 };
+class IndexThetaMappingFactory
+{
+private:
+    double delta_slope;
+    double min_slope;
+public:
+    IndexThetaMappingFactory(double delta_slope, double min_slope)
+    {
+        this->delta_slope = delta_slope;
+        this->min_slope = min_slope;
+    }
+    IndexThetaMaping mapFromIndex(int index)
+    {
+        return IndexThetaMaping(index, delta_slope, min_slope);
+    }
+    IndexThetaMaping mapFromTheta(double theta)
+    {
+        return IndexThetaMaping(theta, delta_slope, min_slope);
+    }
+};
 class LinearHoughTransformer{
 private:
     VisualSpace* linearSpace;
     VisualSpace* houghSpace;
     double threshold;
+    IndexThetaMappingFactory* indexToTheta;
 
     int min_slope;
     int max_slope;
@@ -89,5 +110,6 @@ public:
     vector<HoughLineDescriptor> getLinesOfHighestBrightness(double);
     HoughLineDescriptor getLine(double, int);
     string showHoughSpace();
+    vector<IndexThetaMaping>getThetas();
     ~LinearHoughTransformer();
 };

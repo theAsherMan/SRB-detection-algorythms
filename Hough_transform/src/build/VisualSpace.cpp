@@ -63,8 +63,14 @@ string VisualSpace::toString()
     {
         for(int x=0; x<this->getWidth(); x++)
         {
+            double value = this->point(x,y)->getValue();
             result += " : ";
-            result += to_string(this->point(x,y)->getValue());
+            if(value != 0)
+            {
+                result += to_string(value);
+            }else{
+                result += "_";
+            }
         }
         result += " :";
         result += "<\n>";

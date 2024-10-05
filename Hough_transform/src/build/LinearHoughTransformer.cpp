@@ -4,14 +4,6 @@
 
 using namespace std;
 
-//class LinearHoughTransformer{
-//    void addAreaToTransform(VisualSpace* area);
-//    void resetTransformArea();
-//    void setThreshold(double threshold);
-//    vector<Line> getNclearestLinesAboveThreshold(int n);
-//    vector<Line> getAllLinesAboveThreshold();
-//};
-
 LinearHoughTransformer::LinearHoughTransformer(double min_slope, double max_slope, int number_of_slope_buckets, double threshold, VisualSpace* linearSpace)
 {
     this->linearSpace = linearSpace;
@@ -28,12 +20,17 @@ LinearHoughTransformer::LinearHoughTransformer(double min_slope, double max_slop
     {
         thetas.push_back(IndexThetaMaping(min_slope + ii * delta_slope, delta_slope, min_slope));
     }
+    this->indexToTheta = new IndexThetaMappingFactory(delta_slope, min_slope);
 }
 LinearHoughTransformer::~LinearHoughTransformer()
 {
     if(houghSpace != NULL)
     {
         delete(houghSpace);
+    }
+    if(indexToTheta != NULL)
+    {
+        delete(indexToTheta);
     }
 }
 
@@ -57,7 +54,7 @@ vector<HoughLineDescriptor> LinearHoughTransformer::getNBrightestLines(int n)
             idx++;
             if(idx < n)
             {
-                double theta = IndexThetaMaping(ii, delta_slope, min_slope).theta();
+                double theta = indexToTheta->mapFromIndex(ii).theta();
                 linesByBrightness.insert(linesByBrightness.begin() + idx, HoughLineDescriptor(theta, jj, point->getValue()));
                 if(linesByBrightness.size() > n){linesByBrightness.pop_back();}
             }
@@ -113,11 +110,21 @@ HoughLineDescriptor LinearHoughTransformer::getLine(double theta, int rho)
     {
         transform();
     }
-    return sampleFromHoughSpace(IndexThetaMaping(theta, delta_slope, min_slope), rho);
+    return sampleFromHoughSpace(indexToTheta->mapFromTheta(theta), rho);
 }
 string LinearHoughTransformer::showHoughSpace()
 {
-    return houghSpace->toString();
+    string thetasString = "";
+    for (auto theta : thetas)
+    {
+        thetasString += to_string(theta.theta());
+        thetasString += " : ";
+    }
+    return thetasString + "\n" + houghSpace->toString();
+}
+vector<IndexThetaMaping> LinearHoughTransformer::getThetas()
+{
+    return thetas;
 }
 void LinearHoughTransformer::transform()
 {
@@ -153,7 +160,7 @@ void LinearHoughTransformer::plotPointInHoughSpace(int x, int y)
 void LinearHoughTransformer::VoteForLineOfSlopePassingThroughPoint(IndexThetaMaping indexThetaPair, VSPoint* point)
 {
     double theta = indexThetaPair.theta();
-    double rho = point->getX()*cos(theta) + point->getY()*sin(theta);
+    double rho = round(point->getX()*cos(theta) + point->getY()*sin(theta));
     if(rho >= 0 && rho < houghSpace->getHieght())
     {
         addLineToHoughSpace(indexThetaPair, rho, point->getValue());
@@ -161,7 +168,6 @@ void LinearHoughTransformer::VoteForLineOfSlopePassingThroughPoint(IndexThetaMap
 }
 void LinearHoughTransformer::addLineToHoughSpace(IndexThetaMaping indexThetaPair, double rho, double value)
 {
-    double theta = indexThetaPair.theta();
     int x = indexThetaPair.index();
     houghSpace->point(x, rho)->increaseValue(value);
 }
@@ -176,6 +182,6 @@ HoughLineDescriptor LinearHoughTransformer::sampleFromHoughSpace(int x, int y)
 {
     double brightness = houghSpace->point(x, y)->getValue();
     double rho = houghSpace->point(x, y)->getY();
-    double theta = IndexThetaMaping(x, delta_slope, min_slope).theta();
+    double theta = indexToTheta->mapFromIndex(x).theta();
     return HoughLineDescriptor(theta, rho, brightness);
 }
