@@ -6,8 +6,8 @@
 #include <string>
 #include <math.h>
 
-#include "../build/LinearHoughTransformer.hpp"
-#include "../build/VisualSpace.hpp"
+#include "../build/LinearTransformer/LinearHoughTransformer.hpp"
+#include "../build/VisualSpace/VisualSpace.hpp"
 
 using namespace std;
 

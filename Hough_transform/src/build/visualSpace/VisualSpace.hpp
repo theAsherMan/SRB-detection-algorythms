@@ -15,7 +15,7 @@ class VSPoint{
         int getX();
         int getY();
         double getValue();
-        double increaseValue(double value);
+        double increaseValue(double);
 };
 
 class VisualSpace{
@@ -24,11 +24,12 @@ class VisualSpace{
         int width;
         int hieght;
     public:
-        VisualSpace(int width, int height);
+        VisualSpace(int, int);
         ~VisualSpace();
         VSPoint* point(int, int);
         int getWidth();
         int getHieght();
         double getImageDiamiter();
         string toString();
+        string toString(string);
 };

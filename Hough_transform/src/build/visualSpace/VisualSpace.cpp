@@ -58,6 +58,11 @@ VSPoint* VisualSpace::point(int x, int y)
 
 string VisualSpace::toString()
 {
+    return toString("double");
+}
+
+string VisualSpace::toString(string display_type)
+{
     string result = ">";
     for(int y=this->getHieght()-1; y>= 0; y--)
     {
@@ -67,7 +72,35 @@ string VisualSpace::toString()
             result += " : ";
             if(value != 0)
             {
-                result += to_string(value);
+                string number;
+                if(display_type == "double")
+                {
+                    number = to_string(double(value));
+                }
+                if(display_type == "int")
+                {
+                    number = to_string(int(value));
+                }
+                if(display_type == "float")
+                {
+                    number = to_string(float(value));
+                }
+                if(display_type == "uint")
+                {
+                    number = to_string(uint32_t(value));
+                }
+                if(number.find('.') != string::npos)
+                {
+                    while(number.back() == '0')
+                    {
+                        number.pop_back();
+                    }
+                    if(number.back() == '.')
+                    {
+                        number.pop_back();
+                    }
+                }
+                result += number;
             }else{
                 result += "_";
             }
@@ -75,7 +108,8 @@ string VisualSpace::toString()
         result += " :";
         result += "<\n>";
     }
-    return result + "<";
+    result.pop_back();
+    return result;
 }
 
 // -------------------------------------------------------------------

@@ -8,7 +8,7 @@ using namespace std;
 #include <vector>
 #include <string>
 
-#include "VisualSpace.hpp"
+#include "../VisualSpace/VisualSpace.hpp"
 
 template <typename T>
 class tuple2{
