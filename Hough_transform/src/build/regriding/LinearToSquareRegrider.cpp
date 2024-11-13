@@ -14,15 +14,11 @@ LinearToSquareRegrider::LinearToSquareRegrider(VisualSpace* originalSpace, int r
 
 VisualSpace* LinearToSquareRegrider::data()
 {
-    cout << "getting data" << endl;
     if(regridedSpace != NULL)
     {
-        cout << "regriding already completed.  returning data" << endl;
         return regridedSpace;
     }
-    cout << "preforming regriding" << endl;
     regrid_space();
-    cout << "returning data" << endl;
     return regridedSpace;
 }
 
@@ -43,13 +39,8 @@ void LinearToSquareRegrider::regrid_space()
     int width = originalSpace->getWidth() * regrid_value;
     int height = originalSpace->getHieght() * regrid_value;
 
-    cout << "generating expanded image" << endl;
     VisualSpace* temp1 = generateExpandedImage(width, height);
-    cout << temp1->toString("float") << endl;
-    cout << "regridding accross temp arrays" << endl;
     VisualSpace* temp2 = preformRegridingAcrossTempArrays(temp1);
-    cout << temp2->toString("float") << endl;
-    cout << "collapsing image onto regrided space" << endl; 
     delete temp1;
     projectTempArrayOntoRegridedSpace(temp2);
     delete temp2;
@@ -78,32 +69,31 @@ VisualSpace* LinearToSquareRegrider::generateExpandedImage(int width, int height
 
 VisualSpace* LinearToSquareRegrider::preformRegridingAcrossTempArrays(VisualSpace* temp1)
 {
-    int y_range = temp1->getWidth();
-    int x_range = temp1->getHieght();
+    int y_range = temp1->getHieght();
+    int x_range = temp1->getWidth();
     VisualSpace* temp2 = new VisualSpace(x_range, y_range);
 
-    double y_increment = (y_max-y_min)/y_range;
+    double y_step = (y_max - y_min)/y_range;
 
     for(int row = 0; row < y_range; row++)
     {
-        double current_y = y_increment * row + y_min;
-        for(int col = 0; col < y_range; col++)
+        int actual_y = y_min + row*y_step;
+        int regrided_y = calculateRegridedY(actual_y, y_range-1);
+        for(int col = 0; col < x_range; col++)
         {
-            int regrided_y = calculateRegridedY(current_y, y_range);
-            if(regrided_y >= y_range){continue;}
-            if(regrided_y < 0){continue;}
             float value = temp1->point(col, row)->getValue();
-            temp2->point(regrided_y, row)->increaseValue(value);
+            temp2->point(col, regrided_y)->increaseValue(value);
         }
     }
+    return temp2;
 }
 
 void LinearToSquareRegrider::projectTempArrayOntoRegridedSpace(VisualSpace* temp)
 {
     this->regridedSpace = new VisualSpace(originalSpace->getWidth(), originalSpace->getHieght());
-    for(int col; col < temp->getWidth(); col++)
+    for(int col = 0; col < this->regridedSpace->getWidth(); col++)
     {
-        for(int row; row < temp->getHieght(); row++)
+        for(int row = 0; row < this->regridedSpace->getHieght(); row++)
         {
             for(int ii = col*regrid_value; ii < col*regrid_value+regrid_value; ii++)
             {
@@ -116,12 +106,14 @@ void LinearToSquareRegrider::projectTempArrayOntoRegridedSpace(VisualSpace* temp
     }
 }
 
-int LinearToSquareRegrider::calculateRegridedY(int current_y, int y_range)
+
+int LinearToSquareRegrider::calculateRegridedY(int row, double scale)
 {
+    double row_in = double(row);
     double y_max_component = 1/(y_max * y_max);
     double temp = (
         (
-            1/(current_y*current_y)
+            1/(row_in*row_in)
         ) - (
             y_max_component
         )
@@ -132,6 +124,6 @@ int LinearToSquareRegrider::calculateRegridedY(int current_y, int y_range)
             y_max_component
         )
     );
-
-    return int(round(temp * y_range));
+    int result = int(round(temp*scale));
+    return result;
 }

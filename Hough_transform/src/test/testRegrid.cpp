@@ -16,25 +16,30 @@ int main(int charc, char** argv)
 {
     srand(time(NULL));
 
-    int width = 10;
-    int height = 10;
-    double min_frequency = 100;
-    double max_frequency = 200;
+    int width = 100;
+    int height = 100;
+
+    double f_min = 199.04 * 1000000;
+    double f_max = 229.76 * 1000000;
+
+    double dm_max = 1500;
+    double dm_min = 1200;
 
     VisualSpace* image = new VisualSpace(width, height);
 
-    double dispersion_mesaure = (rand() % 100000) / 1000.0;
-    //double dispersion_mesaure = 20;
-    drawDM(image, dispersion_mesaure, rand() % (width/2), width, height, 100, 200, 1);
+    double dispersion_measure = (rand() % int(dm_max - dm_min)) + dm_min;
+    //int start_x = rand() % (width/2);
+    int start_x = 0;
+    drawDM(image, dispersion_measure, start_x, width, height, f_min, f_max, 1);
 
     cout << "image space" << endl;
-    cout << image->toString("int") << endl;
+    cout << image->toString("mark") << endl;
 
-    LinearToSquareRegrider regridder = LinearToSquareRegrider(image, 2, min_frequency, max_frequency, false);
+    LinearToSquareRegrider regridder = LinearToSquareRegrider(image, 1, f_min, f_max, false);
 
     regridder.data();
     cout << "regriddedSpace" << endl;
-    cout << regridder.data()->toString() << endl;
+    cout << regridder.data()->toString("mark") << endl;
 
     return 1;
 }
@@ -50,7 +55,7 @@ void drawDM(VisualSpace* image, double dispersion_mesaure, int start_x, int widt
         while(double(x) <= round(start_x + d_x))
         {
             if(x >= width) break;
-            image->point(x,y)->increaseValue(5);
+            image->point(x,y)->increaseValue(1);
             x++;
         }
         if(x >= width) break;
@@ -60,18 +65,18 @@ void drawDM(VisualSpace* image, double dispersion_mesaure, int start_x, int widt
         while(double(x) == round(start_x + d_x))
         {
             if(y < 0) break;
-            image->point(x,y)->increaseValue(5);
+            image->point(x,y)->increaseValue(1);
             y--;
             d_x = calculateTimeDelay(y, height, max_frequency, min_frequency, dispersion_mesaure, time_step);
         }
     }
 }
 
-double calculateTimeDelay(int y, int height, double max_frequency, double min_frequency, double dispersion_mesaure, double time_step)
+double calculateTimeDelay(int y, int height, double max_frequency, double min_frequency, double dispersion_measure, double time_step)
 {
     double frequencyStep = (max_frequency - min_frequency)/height;
     double curr_frequency = max_frequency - ((height - y + 1) * frequencyStep);
-    double timeDelay = k_dm*dispersion_mesaure*((1/(curr_frequency*curr_frequency))-(1/(max_frequency*max_frequency)));
+    double timeDelay = k_dm*dispersion_measure*((1/(curr_frequency*curr_frequency))-(1/(max_frequency*max_frequency)));
     double d_x = timeDelay / time_step;
     return d_x;
 }

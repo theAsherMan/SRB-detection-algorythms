@@ -69,7 +69,7 @@ string VisualSpace::toString(string display_type)
         for(int x=0; x<this->getWidth(); x++)
         {
             double value = this->point(x,y)->getValue();
-            result += " : ";
+            result += ":";
             if(value != 0)
             {
                 string number;
@@ -89,6 +89,10 @@ string VisualSpace::toString(string display_type)
                 {
                     number = to_string(uint32_t(value));
                 }
+                if(display_type == "mark")
+                {
+                    number = "#";
+                }
                 if(number.find('.') != string::npos)
                 {
                     while(number.back() == '0')
@@ -105,7 +109,7 @@ string VisualSpace::toString(string display_type)
                 result += "_";
             }
         }
-        result += " :";
+        result += ":";
         result += "<\n>";
     }
     result.pop_back();

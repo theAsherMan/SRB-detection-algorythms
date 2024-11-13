@@ -24,5 +24,5 @@ class LinearToSquareRegrider
         VisualSpace* generateExpandedImage(int, int);
         VisualSpace* preformRegridingAcrossTempArrays(VisualSpace*);
         void projectTempArrayOntoRegridedSpace(VisualSpace*);
-        int calculateRegridedY(int, int);
+        int calculateRegridedY(int, double);
 };
