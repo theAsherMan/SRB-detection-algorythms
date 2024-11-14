@@ -15,7 +15,7 @@ class VSPoint{
         int getX();
         int getY();
         double getValue();
-        double increaseValue(double);
+        void increaseValue(double);
 };
 
 class VisualSpace{

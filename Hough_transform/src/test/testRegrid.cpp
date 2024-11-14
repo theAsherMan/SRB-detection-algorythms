@@ -2,8 +2,8 @@
 #include <time.h>
 #include <math.h>
 
-#include "../build/regriding/LinearToSquareRegrider.hpp"
-#include "../build/visualSpace/VisualSpace.hpp"
+#include "../build/lib/regriding/LinearToSquareRegrider.hpp"
+#include "../build/lib/visualSpace/VisualSpace.hpp"
 
 using namespace std;
 

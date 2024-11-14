@@ -136,7 +136,7 @@ double VSPoint::getValue()
 {
     return value;
 }
-double VSPoint::increaseValue(double value)
+void VSPoint::increaseValue(double value)
 {
     this->value += value;
 }
