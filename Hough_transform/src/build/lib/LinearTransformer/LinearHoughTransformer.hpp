@@ -5,6 +5,8 @@
 using namespace std;
 
 #include <math.h>
+#include <limits.h>
+#include <list>
 #include <vector>
 #include <string>
 
@@ -81,8 +83,8 @@ public:
 class LinearHoughTransformer{
 private:
     VisualSpace* linearSpace;
-    VisualSpace* houghSpace;
-    double threshold;
+    VisualSpace* voteSpace;
+    VisualSpace* accumulatorSpace;
     IndexThetaMappingFactory* indexToTheta;
 
     int min_slope;
@@ -90,8 +92,7 @@ private:
     double delta_slope;
     vector<IndexThetaMaping> thetas;
 
-
-    vector<HoughLineDescriptor> linesByBrightness;
+    list<HoughLineDescriptor> peaks;
 
     void addNextBrightestLine();
     double getHighestBrightness();
@@ -99,17 +100,15 @@ private:
     void setHoughSpace(int, int);
     void plotPointInHoughSpace(int, int);
     void VoteForLineOfSlopePassingThroughPoint(IndexThetaMaping, VSPoint*);
-    void addLineToHoughSpace(IndexThetaMaping, double, double);
+    void addLineToHoughSpace(IndexThetaMaping, double, VSPoint*);
     HoughLineDescriptor sampleFromHoughSpace(IndexThetaMaping, double);
     HoughLineDescriptor sampleFromHoughSpace(int, int);
+    double calcThreshold(double culling_factor);
+    void addPeakIfValid(int ii, int jj, double threshold, int min_distance, int min_angle);
 public:
-    LinearHoughTransformer(double, double, int, double, VisualSpace*);
-    void setThreshold(double threshold);
-    vector<HoughLineDescriptor> getNBrightestLines(int);
-    vector<HoughLineDescriptor> getLinesAboveNBrighness(double);
-    vector<HoughLineDescriptor> getLinesOfHighestBrightness(double);
-    HoughLineDescriptor getLine(double, int);
-    string showHoughSpace();
+    LinearHoughTransformer(double min_slope, double max_slope, int number_of_slope_buckets, VisualSpace* linearSpace);
+    list<HoughLineDescriptor> getPeaks(int min_distance, int min_angle, double culling_factor, int max_peaks_returned = INT_MAX);
     vector<IndexThetaMaping>getThetas();
+    double getXValueWhereLineIntersectsTopOfSpace(HoughLineDescriptor line);
     ~LinearHoughTransformer();
 };

@@ -19,11 +19,11 @@ int main(int charc, char** argv)
     int width = 100;
     int height = 100;
 
-    double f_min = 199.04 * 1000000;
-    double f_max = 229.76 * 1000000;
+    double f_min = 199.04 * 100;
+    double f_max = 229.76 * 10000;
 
-    double dm_max = 1500;
-    double dm_min = 1200;
+    double dm_max = 150000000;
+    double dm_min = 120000000;
 
     VisualSpace* image = new VisualSpace(width, height);
 

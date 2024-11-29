@@ -6,7 +6,7 @@
 #include <string>
 #include <math.h>
 
-#include "../build/lib/LinearTransformer/LinearHoughTransformer.hpp"
+#include "../build/lib/linearTransformer/LinearHoughTransformer.hpp"
 #include "../build/lib/VisualSpace/VisualSpace.hpp"
 
 using namespace std;
@@ -110,7 +110,7 @@ int main(int charc, char** argv)
         }
         if(input == preformTransformOption)
         {
-            auto transformer = LinearHoughTransformer(0.5*M_PI, M_PI, 100, 5, imageSpace);
+            auto transformer = LinearHoughTransformer(0.5*M_PI, M_PI, 100, 5, imageSpace, 1, 1, 2);
             
             outPrint("starting transform");
             auto detectedLines = transformer.getLinesOfHighestBrightness(1);
