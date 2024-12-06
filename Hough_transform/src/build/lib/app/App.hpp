@@ -7,7 +7,7 @@
 #include <vector>
 #include <chrono>
 
-#include "../linearTransformer/LinearHoughTransformer.hpp"
+#include "../LinearTransformer/LinearHoughTransformer.hpp"
 #include "../regriding/LinearToSquareRegrider.hpp"
 #include "../visualSpace/VisualSpace.hpp"
 #include "../stopwatch/StopWatch.hpp"
@@ -21,8 +21,8 @@ using namespace CCfits;
 
 namespace fs = filesystem;
 
-int main(int argc, char*argv[]);
-vector<fs::path>* attainAllFITSFilePathsInDirectory(string directoryPath);
+int main(int argc, char *argv[]);
+vector<fs::path> *attainAllFITSFilePathsInDirectory(string directoryPath);
 double convertDmToTheta(double dm);
 bool isFitsFile(const fs::directory_entry& file);
 fs::path mirrorPath(fs::path source, fs::path destination, fs::path absolutePath);

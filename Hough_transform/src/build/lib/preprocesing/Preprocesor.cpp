@@ -1,6 +1,6 @@
-#include "preprocesor.hpp"
+#include "Preprocesor.hpp"
 
-Preprocesor::Preprocesor(VisualSpace* raw, bool delete_raw_when_deleted)
+Preprocesor::Preprocesor(VisualSpace *raw, bool delete_raw_when_deleted)
 {
     this->raw = raw;
     this->processed = NULL;
@@ -9,19 +9,19 @@ Preprocesor::Preprocesor(VisualSpace* raw, bool delete_raw_when_deleted)
 
 Preprocesor::~Preprocesor()
 {
-    if(processed != NULL)
+    if (processed != NULL)
     {
-        delete(processed);
+        delete (processed);
     }
-    if(delete_original_space_when_deleted)
+    if (delete_original_space_when_deleted)
     {
-        delete(raw);
+        delete (raw);
     }
 }
 
-VisualSpace* Preprocesor::data()
+VisualSpace *Preprocesor::data()
 {
-    if(processed == NULL)
+    if (processed == NULL)
     {
         this->preprocess();
     }
@@ -52,9 +52,9 @@ void Preprocesor::preprocess()
 void Preprocesor::transferFromRawToProcessedWhileSubtractingMean()
 {
     double mean = raw->mean();
-    for(int ii=0; ii<raw->getWidth(); ii++)
+    for (int ii = 0; ii < raw->getWidth(); ii++)
     {
-        for(int jj=0; jj<raw->getHieght(); jj++)
+        for (int jj = 0; jj < raw->getHieght(); jj++)
         {
             processed->point(ii, jj)->setValueUnsafe(raw->point(ii, jj)->getValue() - mean);
         }
