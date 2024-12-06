@@ -65,7 +65,7 @@ list<HoughLineDescriptor> LinearHoughTransformer::getPeaks(int min_distance, int
 
 void LinearHoughTransformer::addPeakIfValid(int ii, int jj, double threshold, int min_distance, int min_angle)
 {
-    int votes = voteSpace->point(ii , jj)->getValue();
+    int votes = accumulatorSpace->point(ii , jj)->getValue();
 
     if(votes >= threshold)
     {
@@ -73,7 +73,7 @@ void LinearHoughTransformer::addPeakIfValid(int ii, int jj, double threshold, in
         {
             for(int angle = max(0, jj - min_angle); angle < min(voteSpace->getHieght(), jj + min_angle); angle++)
             {
-                if(votes < voteSpace->point(distance, angle)->getValue())
+                if(votes < accumulatorSpace->point(distance, angle)->getValue())
                 {
                     return;
                 }

@@ -30,17 +30,23 @@ VisualSpace* Preprocesor::data()
 
 void Preprocesor::preprocess()
 {
+    //FitsWriter(fs::path("./beforeProcessing.fits")).writeData(raw);
     processed = new VisualSpace(raw->getWidth(), raw->getHieght());
 
     transferFromRawToProcessedWhileSubtractingMean();
+    //FitsWriter(fs::path("./afterTransfer.fits")).writeData(processed);
 
     processed->zeroAllNegitiveValues();
+    //FitsWriter(fs::path("./afterfirstzeroing.fits")).writeData(processed);
 
     processed->standardize();
+    //FitsWriter(fs::path("./afterStandardization.fits")).writeData(processed);
 
     processed->standardizeIgnoringNonPositives();
+    //FitsWriter(fs::path("./afterSpecializedStandadization.fits")).writeData(processed);
 
     processed->zeroAllNegitiveValues();
+    //FitsWriter(fs::path("./finalProduct.fits")).writeData(processed);
 }
 
 void Preprocesor::transferFromRawToProcessedWhileSubtractingMean()
@@ -53,4 +59,5 @@ void Preprocesor::transferFromRawToProcessedWhileSubtractingMean()
             processed->point(ii, jj)->setValueUnsafe(raw->point(ii, jj)->getValue() - mean);
         }
     }
+    processed->setAsDirty();
 }

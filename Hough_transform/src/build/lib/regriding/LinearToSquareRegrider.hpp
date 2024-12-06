@@ -1,11 +1,10 @@
 #pragma once
 
-#define K_DM 4.148*1000
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 
 #include "../VisualSpace/VisualSpace.hpp"
+#include "../includes/Constants.hpp"
 
 class LinearToSquareRegrider
 {
@@ -26,7 +25,7 @@ class LinearToSquareRegrider
 
     private:
         void regrid_space();
-        VisualSpace* generateExpandedImage(int, int);
+        VisualSpace* generateExpandedImage(VisualSpace* orig);
         VisualSpace* preformRegridingAcrossTempArrays(VisualSpace*);
         void projectTempArrayOntoRegridedSpace(VisualSpace*);
         int calculateRegridedY(int, double);

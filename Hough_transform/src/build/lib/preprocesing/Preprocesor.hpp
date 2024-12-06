@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../visualSpace/VisualSpace.hpp"
+#include "../fitsWriter/FitsWriter.hpp"
 
 class Preprocesor{
     private:

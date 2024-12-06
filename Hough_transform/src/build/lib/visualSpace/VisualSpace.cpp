@@ -1,21 +1,23 @@
 #include "VisualSpace.hpp"
 
+#define INDEX(x, y) (x + y* this->width)
+
 using namespace std;
 
 VisualSpace::VisualSpace(int width, int height)
 {
-    this->array = valarray<valarray<VSPoint*>>(width);
+    this->width = width;
+    this->hieght = height;    
+    this->array = valarray<VSPoint*>(width * height);
     for(int ii=0; ii<width; ii++)
     {
-        this->array[ii] = valarray<VSPoint*>(height);
         for(int jj=0; jj<height; jj++)
         {
-            this->array[ii][jj] = new VSPoint(ii, jj, 0, this);
+            this->array[INDEX(ii, jj)] = new VSPoint(ii, jj, 0, this);
         }
     }
 
-    this->width = width;
-    this->hieght = height;
+
 
     setAsDirty();
 }
@@ -24,41 +26,39 @@ VisualSpace::VisualSpace(const valarray<valarray<double>>* source)
     valarray<valarray<double>> de_ref_source = *source;
     this->width = de_ref_source.size();
     this->hieght = de_ref_source[0].size();
-    this->array = valarray<valarray<VSPoint*>>(this->width);
+    this->array = valarray<VSPoint*>(this->width*this->hieght);
+
     for(int ii=0; ii<width; ii++)
     {
-        this->array[ii] = valarray<VSPoint*>(this->hieght);
+        for(int jj=0; jj<hieght; jj++)
+        {
+            this->array[INDEX(ii, jj)] = new VSPoint(ii, jj, (*source)[ii][jj], this);
+        }
     }
 
     setAsDirty();
 }
 VisualSpace::VisualSpace(int width, int height, const valarray<double>* source)
 {
-    auto de_ref_source = *source;
     this->width = width;
     this->hieght = height;
 
-    this->array = valarray<valarray<VSPoint*>>(width);
+    this->array = valarray<VSPoint*>(width*height);
     for(int ii=0; ii<width; ii++)
     {
-        this->array[ii] = valarray<VSPoint*>(height);
-        for(int jj=0; jj<height; jj++)
+        for(int jj=0; jj<hieght; jj++)
         {
-            double value = de_ref_source[ii + width * jj];
-            this->array[ii][jj] = new VSPoint(ii, jj, value, this);
+            this->array[INDEX(ii, jj)] = new VSPoint(ii, jj, (*source)[INDEX(ii, jj)], this);
         }
     }
-
+    
     setAsDirty();
 }
 VisualSpace::~VisualSpace()
 {
-    for(int ii=0; ii<this->width; ii++)
+    for(int ii=0; ii<this->width*hieght; ii++)
     {
-        for(int jj=0; jj<this->hieght; jj++)
-        {
-            delete(this->array[ii][jj]);
-        }
+        delete(array[ii]);
     }
 }
 
@@ -74,7 +74,7 @@ int VisualSpace::getHieght()
 
 int VisualSpace::count()
 {
-    return width * hieght;
+    return array.size();
 }
 
 double VisualSpace::getImageRadius()
@@ -87,7 +87,7 @@ double VisualSpace::getImageRadius()
 
 VSPoint* VisualSpace::point(int x, int y)
 {
-    return this->array[x][y];
+    return this->array[INDEX(x, y)];
 }
 
 string VisualSpace::toString()
@@ -204,7 +204,7 @@ double VisualSpace::max()
     {
         for(int jj=0; jj<hieght; jj++)
         {
-            _max = std::max(_max, array[ii][jj]->getValue());
+            _max = std::max(_max, point(ii, jj)->getValue());
         }
     }
     dirty_max = false;
@@ -222,7 +222,7 @@ double VisualSpace::min()
     {
         for(int jj=0; jj<hieght; jj++)
         {
-            _min = std::min(_min, array[ii][jj]->getValue());
+            _min = std::min(_min, point(ii, jj)->getValue());
         }
     }
     dirty_min = false;
@@ -287,7 +287,7 @@ double VisualSpace::std_dev()
     {
         for(int jj=0; jj<hieght; jj++)
         {
-            _std_dev += pow(array[ii][jj]->getValue() - avg, 2);
+            _std_dev += pow(point(ii, jj)->getValue() - avg, 2);
         }
     }
     dirty_dev = false;
@@ -337,11 +337,21 @@ void VisualSpace::clear()
     {
         for(int jj=0; jj<hieght; jj++)
         {
-            this->array[ii][jj]->setValue(0);
+            point(ii, jj)->setValue(0);
         }
     }
     
     setAsDirty();
+}
+
+valarray<double> VisualSpace::raw()
+{
+    auto result = valarray<double>(count());
+    for(int ii=0; ii<count(); ii++)
+    {
+        result[ii] = array[ii]->getValue();
+    }
+    return result;
 }
 
 // -------------------------------------------------------------------

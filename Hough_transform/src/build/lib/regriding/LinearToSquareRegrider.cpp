@@ -1,6 +1,6 @@
 #include "LinearToSquareRegrider.hpp"
 
-#include <iostream>
+#include "../fitsWriter/FitsWriter.hpp"
 
 LinearToSquareRegrider::LinearToSquareRegrider(VisualSpace* originalSpace, int regrid_value, float y_min, float y_max, bool delete_original_space_when_deleted)
 {
@@ -14,11 +14,10 @@ LinearToSquareRegrider::LinearToSquareRegrider(VisualSpace* originalSpace, int r
 
 VisualSpace* LinearToSquareRegrider::data()
 {
-    if(regridedSpace != NULL)
+    if(regridedSpace == NULL)
     {
-        return regridedSpace;
+        regrid_space();
     }
-    regrid_space();
     return regridedSpace;
 }
 
@@ -49,31 +48,32 @@ LinearToSquareRegrider::~LinearToSquareRegrider()
 
 void LinearToSquareRegrider::regrid_space()
 {
-    int width = originalSpace->getWidth() * regrid_value;
-    int height = originalSpace->getHieght() * regrid_value;
-
-    VisualSpace* temp1 = generateExpandedImage(width, height);
+    FitsWriter("./log/beforeRegridding.fits").writeData(originalSpace);
+    VisualSpace* temp1 = generateExpandedImage(originalSpace);
+    FitsWriter("./log/afterExpansion.fits").writeData(temp1);
     VisualSpace* temp2 = preformRegridingAcrossTempArrays(temp1);
+    FitsWriter("./log/afterMainRegridStep.fits").writeData(temp2);
     delete temp1;
     projectTempArrayOntoRegridedSpace(temp2);
+    FitsWriter("./log/afterCollaps.fits").writeData(regridedSpace);
     delete temp2;
 }
 
-VisualSpace* LinearToSquareRegrider::generateExpandedImage(int width, int height)
+VisualSpace* LinearToSquareRegrider::generateExpandedImage(VisualSpace* orig)
 {
+    int width = orig->getWidth() * regrid_value;
+    int height = orig->getHieght() * regrid_value;
+    double regrid_square = regrid_value * regrid_value;
+
     VisualSpace* temp = new VisualSpace(width, height);
-    for(int row = 0; row < originalSpace->getHieght(); row++)
+    for(int x=0; x<width; x++)
     {
-        for(int col = 0; col < originalSpace->getWidth(); col++)
+        for(int y=0; y<height; y++)
         {
-            double value = originalSpace->point(col, row)->getValue() / (regrid_value*regrid_value);
-            for(int ii=row*regrid_value; ii<row*regrid_value+regrid_value; ii++)
-            {
-                for(int jj=col*regrid_value; jj<col*regrid_value + regrid_value; jj++)
-                {
-                    temp->point(jj, ii)->setValueUnsafe(value);
-                }
-            }
+            int orig_x = x / regrid_value;
+            int orig_y = y / regrid_value;
+
+            temp->point(x, y)->setValueUnsafe(orig->point(orig_x, orig_y)->getValue());
         }
     }
     return temp;

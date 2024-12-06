@@ -2,32 +2,62 @@
 #include <CCfits/CCfits>
 #include <iostream>
 #include <filesystem>
+#include <valarray>
 
+#include "../build/lib/visualSpace/VisualSpace.hpp"
+#include "../build/lib/fitsWriter/FitsWriter.hpp"
+
+#define WIDTH 10
+#define HEIGHT 15
+#define FILENAME "./temp.fits"
 
 using namespace std;
 using namespace CCfits;
 
+void initualiseData(VisualSpace* data);
+void saveData(VisualSpace* data);
+VisualSpace* recoverData();
+
 int main()
 {
-    string prefix = "./fitsFiles";
-    for(const auto & entry : std::filesystem::__cxx11::recursive_directory_iterator(prefix))
+    auto data1 = new VisualSpace(WIDTH, HEIGHT);
+    initualiseData(data1);
+    cout << data1->toString() << endl;
+    cout << "======================" << endl << endl;
+    saveData(data1);
+    cout << "======================" << endl;
+    auto data2 = recoverData();
+    cout << data2->toString() << endl;
+    //filesystem::remove(FILENAME);
+    cout << "---===+++===---" << endl;
+}
+
+void initualiseData(VisualSpace* data)
+{
+    for(int ii=0; ii<data->getWidth(); ii++)
     {
-        if(entry.is_regular_file() && entry.path().extension() == ".fits")
+        for(int jj=0; jj<data->getHieght(); jj++)
         {
-
-            string fitsPath = entry.path();
-            unique_ptr<FITS> pInfile(new FITS(fitsPath, Read, true));
-
-            PHDU &image = pInfile->pHDU();
-            image.readAllKeys();
-
-            valarray<float> contents;
-
-            image.read(contents);
-
-            cout << "=======================================" << endl;
-            cout << entry.path() << endl;
-            cout<<image<<endl;
+            data->point(ii, jj)->setValue(ii+jj*WIDTH);
         }
     }
+}
+
+void saveData(VisualSpace* data)
+{
+    FitsWriter(FILENAME).writeData(data);
+}
+
+VisualSpace* recoverData()
+{
+    auto fits_file = FITS(FILENAME, Read, true);
+    PHDU& pHDU = fits_file.pHDU();
+
+    int width = pHDU.axis(0);
+    int height = pHDU.axis(1);
+    int count = width * height;
+
+    auto raw = valarray<double>(count);
+    pHDU.read(raw);
+    return new VisualSpace(width, height, &raw);
 }

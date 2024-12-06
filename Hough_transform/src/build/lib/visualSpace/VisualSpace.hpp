@@ -34,7 +34,7 @@ class VSPoint{
 
 class VisualSpace{
     private:
-        valarray<valarray<VSPoint*>> array;
+        valarray<VSPoint*> array;
         int width;
         int hieght;
 
@@ -46,7 +46,7 @@ class VisualSpace{
         double _std_devOfPositives; bool dirty_pos_dev;
 
     public:
-        VisualSpace(int, int);
+        VisualSpace(int width, int height);
         VisualSpace(const valarray<valarray<double>>*);
         VisualSpace(int, int, const valarray<double>*);
         ~VisualSpace();
@@ -70,4 +70,6 @@ class VisualSpace{
         void setAsDirty();
 
         void clear();
+
+        valarray<double> raw();
 };

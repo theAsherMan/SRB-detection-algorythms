@@ -9,7 +9,7 @@ using namespace std;
 
 const double k_dm = 4.148 * 1000;
 
-void drawDM(VisualSpace*, double, int, int, int, double, double, double);
+void drawDM(VisualSpace*, double, int, double, double, double);
 double calculateTimeDelay(int, int, double, double, double, double);
 
 int main(int charc, char** argv)
@@ -44,30 +44,30 @@ int main(int charc, char** argv)
     return 1;
 }
 
-void drawDM(VisualSpace* image, double dispersion_mesaure, int start_x, int width, int height, double min_frequency, double max_frequency, double time_step)
+void drawDM(VisualSpace* image, double dispersion_measure, int start_x, double min_frequency, double max_frequency, double time_step)
 {
-    int y = height - 1;
+    int y = image->getHieght() - 1;
     int x = start_x;
 
-    while(y >= 0 && x < width)
+    while(y >= 0 && x < image->getWidth())
     {
-        double d_x = calculateTimeDelay(y, height, max_frequency, min_frequency, dispersion_mesaure, time_step);
+        double d_x = calculateTimeDelay(y, image->getHieght(), max_frequency, min_frequency, dispersion_measure, time_step);
         while(double(x) <= round(start_x + d_x))
         {
-            if(x >= width) break;
+            if(x >= image->getWidth()) break;
             image->point(x,y)->increaseValue(1);
             x++;
         }
-        if(x >= width) break;
+        if(x >= image->getWidth()) break;
         x--;
         y--;
-        d_x = calculateTimeDelay(y, height, max_frequency, min_frequency, dispersion_mesaure, time_step);
+        d_x = calculateTimeDelay(y, image->getHieght(), max_frequency, min_frequency, dispersion_measure, time_step);
         while(double(x) == round(start_x + d_x))
         {
             if(y < 0) break;
             image->point(x,y)->increaseValue(1);
             y--;
-            d_x = calculateTimeDelay(y, height, max_frequency, min_frequency, dispersion_mesaure, time_step);
+            d_x = calculateTimeDelay(y, image->getHieght(), max_frequency, min_frequency, dispersion_measure, time_step);
         }
     }
 }

@@ -11,10 +11,15 @@ int main(int argc, char*argv[])
     for(int ii=0; ii<fitsFilePaths->size(); ii++)
     {
         const auto entry = fitsFilePaths->at(ii);
-        const auto result_path = deturmineResultsPathForSource(entry);
+        auto result_path = mirrorPath(FITSSOURCEFOLDER, FITSRESULTSFOLDER, entry);
+        auto log_bin_path = mirrorPath(FITSSOURCEFOLDER, DEBUGOUTPUTFOLDER, entry).parent_path();
+
+        result_path.replace_extension(".cad");
         ensurePathExists(result_path);
-        searchForFrbInFile(entry, result_path);
+        ensurePathExists(log_bin_path);
+        searchForFrbInFile(entry, result_path, log_bin_path);
     }
+    cout << "---===+++===---" << endl;
 }
 
 vector<fs::path>* attainAllFITSFilePathsInDirectory(string directoryPath)
@@ -35,10 +40,10 @@ bool isFitsFile(const fs::directory_entry& entry)
     return entry.is_regular_file() && entry.path().extension() == ".fits";
 }
 
-fs::path deturmineResultsPathForSource(fs::path source)
+fs::path mirrorPath(fs::path source, fs::path destination, fs::path absolutePath)
 {
-    auto relative_path = fs::relative(source, FITSSOURCEFOLDER);
-    return FITSRESULTSFOLDER / relative_path.replace_extension(".cad");
+    auto relative_path = fs::relative(absolutePath, source);
+    return destination / relative_path;
 }
 
 void ensurePathExists(fs::path path)
@@ -51,7 +56,7 @@ void ensurePathExists(fs::path path)
     }
 }
 
-void searchForFrbInFile(fs::path source_path, fs::path result_path)
+void searchForFrbInFile(fs::path source_path, fs::path result_path, fs::path log_bin_path)
 {
     auto raw_fits = FITS(source_path.string(), Read, true);
     logProcessingFitsFileStart(raw_fits.name());
@@ -85,7 +90,7 @@ void searchForFrbInFile(fs::path source_path, fs::path result_path)
     cout << "           end time: " << max_time << endl;
     
     cout << "::DM range::" << endl;
-    double min_disp = 0;
+    double min_disp = 100;
     double max_disp = 1100;
     cout << "          lowest DM: " << min_disp << endl;
     cout << "         highest DM: " << max_disp << endl;
@@ -94,16 +99,20 @@ void searchForFrbInFile(fs::path source_path, fs::path result_path)
 
     valarray<double> flatData(time_length * freq_range);
     fits.read(flatData);
-    cout << " == starting regridding == " << endl;
+
+    VisualSpace* data = new VisualSpace(time_length, freq_range, &flatData);
+    logFitsFile(log_bin_path, "before", data);
     auto stopwatch = StopWatch::start();
+
+    cout << " == starting regridding == " << endl;
+
     
-    auto regrid_scaling_factor = 3; // hard coded value in Jai Mings code.  may be subject to change should more accurate measure be found
-    auto data = new VisualSpace(time_length, freq_range, &flatData);
     auto regridder = LinearToSquareRegrider(data, regrid_scaling_factor, min_freq, max_freq, true);
     regridder.data();
     long time_to_regrid = stopwatch.lap();
     cout << "               time: " << roundl(time_to_regrid / 1000000.0) << "ms" << endl;
     cout << " == regridding complete == " << endl;
+    logFitsFile(log_bin_path, "regriding", regridder.data());
 
     cout << "::regridded DM range::" << endl;
     double max_theta = regridder.dmToTheta(min_disp, freq_range, d_time);   // DMs map to negitive values
@@ -112,35 +121,50 @@ void searchForFrbInFile(fs::path source_path, fs::path result_path)
     cout << "      highest theta: " << max_theta << endl;
     cout << " theta bucket count: " << dm_bucket_count << endl;
 
+    data = regridder.data();
+
     cout << " == start preprocessing == " << endl;
     stopwatch.lap();
-    auto preproc = Preprocesor(regridder.data(), false);
+    auto preproc = Preprocesor(data, false);
     preproc.data();
     long time_to_preprocess = stopwatch.lap();
     cout << "               time: " << round(time_to_preprocess / 1000000.0) << "ms" << endl;
     cout << " == preprocessing complete == " << endl;
+    logFitsFile(log_bin_path, "preprocessing", preproc.data());
 
+    data = preproc.data();
     cout << " == preforming transform == " << endl;
     stopwatch.lap();
-    
-    auto transformer = LinearHoughTransformer(min_theta, max_theta, dm_bucket_count, regridder.data());
+    auto transformer = LinearHoughTransformer(min_theta, max_theta, dm_bucket_count, data);
     auto results = transformer.getPeaks(9, 0.174533, culling_factor, 5);
 
     long transform_time = stopwatch.lap();
     cout << "               time: " << round(transform_time / 1000000.0) << "ms" << endl;
+    cout << "        theta range: " << transformer.getThetas()[0].theta() << " to " << transformer.getThetas()[transformer.getThetas().size()-1].theta() << endl;
     cout << " == transform complete == " << endl;
+
     cout << endl;
+    auto _ = VisualSpace(data->getWidth(), data->getHieght());
+    auto drawing = FrbDrawer(&_, min_freq, max_freq, d_time);
     cout << " --- results --- " << endl;
     for (auto line : results)
     {
+        double theta = line.theta;
+        double rho = line.rho;
+        double dm = regridder.thetaToDm(line.theta, freq_range, d_time);
+        double start_time = transformer.getXValueWhereLineIntersectsTopOfSpace(line);
+        double intensity = line.brightness;
         cout << "     +++     " << endl;
         cout << "     +++     " << endl;
-        cout << "     theta: " << line.theta << endl;
-        cout << "       rho: " << line.rho << endl;
-        cout << "        DM: " << regridder.thetaToDm(line.theta, freq_range, d_time) << endl;
-        cout << "start time: " << transformer.getXValueWhereLineIntersectsTopOfSpace(line) << endl;
-        cout << " no. votes: " << line.brightness << endl;
+        cout << "     theta: " << theta << endl;
+        cout << "       rho: " << rho << endl;
+        cout << "        DM: " << dm << endl;
+        cout << "start time: " << start_time << endl;
+        cout << " no. votes: " << intensity << endl;
+        drawing.draw(dm, start_time, intensity);
     }
+    FitsWriter(log_bin_path/"found.fits").writeData(drawing.data());
+    printExpectedResults(source_path.parent_path(), log_bin_path, data->getWidth(), data->getHieght(), min_freq, max_freq, d_time);
 }
 
 void logProcessingFitsFileStart(string fileName)
@@ -187,4 +211,35 @@ double calculateD_dm(double d_time, double max_disp, double min_freq, double max
     const double almost_max_time_delay = max_time_delay - d_time;
     const double almost_max_disp = almost_max_time_delay/const_factor;
     return max_disp - almost_max_disp;
+}
+
+void logFitsFile(fs::path log_bin_path, string filename, VisualSpace* data)
+{
+    
+    fs::path filePath = (log_bin_path/filename).replace_extension(".fits");
+    FitsWriter(filePath).writeData(data);
+}
+
+void printExpectedResults(fs::path directoryPath, fs::path log_bin_path, int width, int height, double min_freq, double max_freq, double time_step)
+{
+    auto path = directoryPath/"lable.csv";
+    if(fs::exists(path))
+    {
+        cout << "correct frbs" << endl;
+        auto _ = VisualSpace(width, height);
+        auto drawing = FrbDrawer(&_, min_freq, max_freq, time_step);
+        auto headers = Csv::getHeaders(path);
+        Csv answers(path);
+        for(auto frb : answers)
+        {
+            cout << "---------------------------------" << endl;
+            cout << "        DM: " << stod(frb["DM"]) << endl;
+            cout << "start time: " << stoi(frb["StartTimeIndex"]) << endl;
+            drawing.draw(stod(frb["DM"]), stoi(frb["StartTimeIndex"]), 1);
+        }
+        cout << "---------------------------------" << endl;
+        FitsWriter(log_bin_path/"correct.fits").writeData(drawing.data());
+    }else{
+        cout<<"file has no lable.  cannot deturmine accuracy of measurement"<<endl;
+    }
 }
